@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "lint:build": "mv out/_next out/assets && sed -i '' 's/\\/_next/\\.\\/assets/g' out/**.html",
-    "build": "next build && next export && npm run lint:build",
+    "build": "next build && next export",
     "start": "next start",
     "lint": "next lint",
     "test": "jest --watchAll"
