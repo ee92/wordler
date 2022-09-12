@@ -49,7 +49,7 @@ const Home: NextPage = () => {
 		if (invalid) {
 			timeout = setTimeout(() => {
 				setInvalid(undefined);
-			}, 300) // animation duration
+			}, 300); // animation duration
 		}
 		return () => {
 			timeout && clearTimeout(timeout);
@@ -59,6 +59,7 @@ const Home: NextPage = () => {
 	return (
 		<div className="flex justify-center">
 			<div>
+				<h1 className="text-4xl mb-8 text-center">Wordler 🤓📚</h1>
 				<div>Greens</div>
 				<div className="flex">
 					<div className="flex gap-1">
@@ -79,12 +80,13 @@ const Home: NextPage = () => {
 									}
 								}}
 								onChange={(e: any) => {
-									if (/^([^A-Za-z]*)$/.test(e.target.value)) {
+									const input = e.target.value;
+									if (input && !/^[a-zA-Z]+$/.test(input)) {
 										setInvalid(`green-${i}`);
 										return;
 									}
-									const input = e.target.value.replace(/[^A-Za-z]/ig, '');
-									const letter = input && input[input.length - 1].toUpperCase();
+									const text = input.replace(/[^A-Za-z]/ig, '');
+									const letter = text && text[text.length - 1].toUpperCase();
 									if (letter && !greens.some(g => g.value === letter)) {
 										const updatedLetter = { value: letter };
 										setGreens([...greens.slice(0, i), updatedLetter, ...greens.slice(i + 1)]);
@@ -97,7 +99,7 @@ const Home: NextPage = () => {
 					<button
 						className='w-6 h-6 m-2 rounded-full border-2 border-blue-600 text-blue-600 flex justify-center items-center outline-offset-2'
 						onClick={() => {
-							setGreens(initArray(LETTERS_IN_WORD, ""));
+							setGreens(initArray(LETTERS_IN_WORD, defaultLetter));
 						}}
 					>
 						-
@@ -122,7 +124,7 @@ const Home: NextPage = () => {
 											className={`w-10 h-10 rounded text-center ${invalid === id ? "animate-shake" : ""} ${letter.value ? "bg-yellow-300" : "bg-yellow-200"}`}
 											value={letter.value}
 											onKeyDown={(e: any) => {
-												if (e.key === "Backspace" && letter) {
+												if (e.key === "Backspace" && letter.value) {
 													let updatedSlot;
 													if (j === 0) { //first
 														updatedSlot = slot.length === 1 ? [defaultLetter] : slot.slice(1);
@@ -162,12 +164,13 @@ const Home: NextPage = () => {
 												}
 											}}
 											onChange={(e: any) => {
-												if (/^([^A-Za-z]*)$/.test(e.target.value)) {
-													setInvalid(id);
+												const input = e.target.value;
+												if (input && !/^[a-zA-Z]+$/.test(input)) {
+													setInvalid(`yellow-${i}-${j}`);
 													return;
 												}
-												const input = e.target.value.replace(/[^A-Za-z]/ig, '');
-												const letter = input && input.charAt(input.length - 1).toUpperCase();
+												const text = input.replace(/[^A-Za-z]/ig, '');
+												const letter = text && text.charAt(text.length - 1).toUpperCase();
 												const letterNotInSlot = letter && !slot.some(l => l.value === letter);
 												if (letterNotInSlot) {
 													let updatedLetter = { value: letter };
@@ -190,7 +193,7 @@ const Home: NextPage = () => {
 					<button
 						className='w-6 h-6 m-2 rounded-full border-2 border-blue-600 text-blue-600 flex justify-center items-center outline-offset-2'
 						onClick={() => {
-							setYellows(initArray(LETTERS_IN_WORD, [""]));
+							setYellows(initArray(LETTERS_IN_WORD, [defaultLetter]));
 						}}
 					>
 						-
