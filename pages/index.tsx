@@ -4,138 +4,214 @@ import wordle from "../utils/wordle";
 
 const LETTERS_IN_WORD = 5;
 
+type Letter = {
+	value: string;
+	autoFocus?: boolean;
+}
+
+const defaultLetter = {
+	value: "",
+	autoFocus: true
+}
+
 const initArray = (len: number, val: any) => [...Array(len)].map(_ => val);
 
 const Home: NextPage = () => {
-	const [greens, setGreens] = useState<string[]>(initArray(LETTERS_IN_WORD, ""));
-	const [yellows, setYellows] = useState<string[][]>(initArray(LETTERS_IN_WORD, [""]));
+	const [greens, setGreens] = useState<Letter[]>(initArray(LETTERS_IN_WORD, defaultLetter));
+	const [yellows, setYellows] = useState<Letter[][]>(initArray(LETTERS_IN_WORD, [defaultLetter]));
 	const [grey, setGreys] = useState("");
 	const [results, setResults] = useState<string[]>([]);
-	const [focusEl, setFocusEl] = useState<HTMLInputElement>();
 
-	// force focus after new input box has rendered
+	function focusEl(el: HTMLElement | null) {
+		el && el.focus();
+	}
+
+	// this is lame, but whenever the yellows change, make sure there is an empty string in each slot
+	// the logic for doing this on every yellow input change was harder to keep track of
 	useEffect(() => {
-		const next = (focusEl?.value ? focusEl?.nextElementSibling : focusEl?.previousElementSibling) as HTMLElement;
-		next && next.focus();
-	}, [focusEl])
+		yellows.forEach((slot, i) => {
+			const isSlotFull = slot.length === LETTERS_IN_WORD - 1;
+			const hasEmpty = slot[slot.length - 1].value === "";
+			if (!isSlotFull && !hasEmpty) {
+				const lastLetterIndex = slot.length - 1;
+				const shouldGetFocus = document.getElementById(`yellow-${i}-${lastLetterIndex}`) === document.activeElement;
+				const emptyLetter = { value: "", autoFocus: shouldGetFocus };
+				const updatedSlot = [...slot, emptyLetter];
+				setYellows([...yellows.slice(0, i), updatedSlot, ...yellows.slice(i + 1)])
+			}
+		});
+	}, [yellows]);
 
 	return (
-		<div>
-			<div>Greens</div>
-			<div className="flex">
-				<div className="flex gap-1">
-					{greens.map((cell, i) => (
-						<input
-							key={i}
-							className={`w-10 h-10 rounded text-center ${cell ? "bg-green-300" : "bg-green-200"}`}
-							value={cell}
-							onKeyDown={(e: any) => {
-								if (e.key === "Backspace") {
-									setGreens([...greens.slice(0, i), "", ...greens.slice(i + 1)]);
-									setFocusEl(e.target);
-								}
-							}}
-							onChange={(e: any) => {
-								const input = e.target.value.replace(/[^A-Za-z]/ig, '');
-								const updatedCell = input.charAt(input.length - 1).toUpperCase();
-								if (input) {
-									setGreens([...greens.slice(0, i), updatedCell, ...greens.slice(i + 1)]);
-									setFocusEl(e.target);
-								}
-							}}
-						/>
-					))}
-				</div>
-				<button
-					className='w-6 h-6 m-2 rounded-full border-2 border-blue-600 text-blue-600 flex justify-center items-center'
-					onClick={() => {
-						setGreens(initArray(LETTERS_IN_WORD, ""));
-					}}
-				>
-					-
-				</button>
-			</div>
-			<div>Yellows</div>
-			<div className="flex">
-				<div className="flex gap-1">
-					{yellows.map((cell, i) => (
-						<div key={i} className="flex flex-col gap-1">
-							{cell.map((letter, j) => {
-								const isCellFull = j + 1 > LETTERS_IN_WORD
-								if (isCellFull) return null;
-								return (
-									<input
-										key={j}
-										id={`yellow-${i}-${j}`}
-										className={`w-10 h-10 rounded text-center ${letter ? "bg-yellow-300" : "bg-yellow-200"}`}
-										value={letter}
-										onKeyDown={(e: any) => {
-											console.log("on keydown", e)
-											if (e.key === "Backspace") {
-												const updatedCell = [...cell.slice(0, j), ""];
-												setYellows([...yellows.slice(0, i), updatedCell, ...yellows.slice(i + 1)]);
-												setFocusEl(e.target);
-											}
-										}}
-										onChange={(e: any) => {
-											console.log("on change", e)
-											const input = e.target.value.replace(/[^A-Za-z]/ig, '');
-											const letter = input && input.charAt(input.length - 1).toUpperCase();
-											if (letter && !cell.includes(letter)) {
-												const updatedCell = [...cell.slice(0, j), letter, ""];
-												setYellows([...yellows.slice(0, i), updatedCell, ...yellows.slice(i + 1)]);
-												setFocusEl(e.target);
-											}
-										}}
-									/>
-								)
-							})}
-						</div>
-					))}
-				</div>
-				<button
-					className='w-6 h-6 m-2 rounded-full border-2 border-blue-600 text-blue-600 flex justify-center items-center'
-					onClick={() => {
-						setYellows(initArray(LETTERS_IN_WORD, [""]));
-					}}
-				>
-					-
-				</button>
-			</div>
-			<div>Greys</div>
-			<div className="flex">
-				<input
-					className={`w-[13.5rem] h-10 rounded text-center ${grey ? "bg-gray-200" : "bg-gray-100"}`}
-					value={grey}
-					onChange={(e) => setGreys(e.target.value.replace(/[^A-Za-z]/ig, '').toUpperCase())}
-				/>
-				<button
-					className='w-6 h-6 m-2 rounded-full border-2 border-blue-600 text-blue-600 flex justify-center items-center'
-					onClick={() => {
-						setGreys("");
-					}}
-				>
-					-
-				</button>
-			</div>
+		<div className="flex justify-center">
 			<div>
-				<button
-					className="rounded-full bg-blue-600 text-white my-2 py-2 w-[13.5rem]"
-					onClick={async () => {
-						const knownData = { greens, yellows, greys: grey.split("") }
-						const words = wordle(knownData)
-						setResults(words);
-					}}
-				>
-					Find Matches
-				</button>
-			</div>
-			{results.length > 0 && `Matching words: ${results.length}`}
-			{results.map((result, i) => (
-				<div key={i}>
-					{result}
+				<div>Greens</div>
+				<div className="flex">
+					<div className="flex gap-1">
+						{greens.map((letter, i) => (
+							<input
+								key={i}
+								className={`w-10 h-10 rounded text-center ${letter ? "bg-green-300" : "bg-green-200"}`}
+								value={letter.value}
+								onKeyDown={(e: any) => {
+									if (e.key === "Backspace") {
+										setGreens([...greens.slice(0, i), defaultLetter, ...greens.slice(i + 1)]);
+									}
+									if (e.key === "Backspace" || e.key === "ArrowLeft") {
+										focusEl(e.target.previousElementSibling);
+									}
+									if (e.key === "Enter" || e.key === "ArrowRight" || e.key === " ") {
+										focusEl(e.target.nextElementSibling);
+									}
+								}}
+								onChange={(e: any) => {
+									const input = e.target.value.replace(/[^A-Za-z]/ig, '');
+									const letter = input && input.charAt(input.length - 1).toUpperCase();
+									if (letter && !greens.some(g => g.value === letter)) {
+										const updatedLetter = { value: letter };
+										setGreens([...greens.slice(0, i), updatedLetter, ...greens.slice(i + 1)]);
+										focusEl(e.target.nextElementSibling);
+									}
+								}}
+							/>
+						))}
+					</div>
+					<button
+						className='w-6 h-6 m-2 rounded-full border-2 border-blue-600 text-blue-600 flex justify-center items-center outline-offset-2'
+						onClick={() => {
+							setGreens(initArray(LETTERS_IN_WORD, ""));
+						}}
+					>
+						-
+					</button>
 				</div>
-			))}
+				<div>Yellows</div>
+				<div className="flex">
+					<div className="flex gap-1">
+						{yellows.map((slot, i) => (
+							<div key={i} id={`yellow-${i}`} className="flex flex-col gap-1">
+								{slot.map((letter, j) => {
+									const maxLetters = LETTERS_IN_WORD - 1; // if you have all letter you won 😁
+									const isLastLetterInSlot = j + 1 === maxLetters;
+									const isSlotFull = j + 1 > maxLetters;
+									if (isSlotFull) return null;
+									return (
+										<input
+											key={`yellow-${i}-${j}`}
+											id={`yellow-${i}-${j}`}
+											autoFocus={letter.autoFocus}
+											className={`w-10 h-10 rounded text-center ${letter ? "bg-yellow-300" : "bg-yellow-200"}`}
+											value={letter.value}
+											onKeyDown={(e: any) => {
+												if (e.key === "Backspace" && letter) {
+													let updatedSlot;
+													if (j === 0) { //first
+														updatedSlot = slot.length === 1 ? [defaultLetter] : slot.slice(1);
+													} else if (isLastLetterInSlot) { // last
+														updatedSlot = [...slot.slice(0, j), defaultLetter];
+													} else {
+														updatedSlot = [...slot.slice(0, j), ...slot.slice(j + 1)];
+													}
+													setYellows([...yellows.slice(0, i), updatedSlot, ...yellows.slice(i + 1)]);
+												}
+												/*
+														what are all the things an input can do?
+														focus next letter, focus next slot, focus previous slot
+														maye make an object/component with those abilities
+												*/
+												// focus handling
+												if (e.key === "Backspace") {
+													if (j > 0) {
+														focusEl(e.target.previousElementSibling);
+													} else if (i > 0) {
+														// focus last slot for previous slot
+														focusEl(document.getElementById(`yellow-${i - 1}-${yellows[i - 1].length - 1}`));
+													}
+												}
+												if (e.key === "Enter" || e.key == " ") {
+													if (e.target.value) {
+														focusEl(e.target.nextElementSibling);
+													} else {
+														focusEl(document.getElementById(`yellow-${i + 1}-0`));
+													}
+												}
+												if (e.key === "ArrowLeft") {
+													// TODO
+												}
+												if (e.key === "ArrowRight") {
+													// TODO
+												}
+											}}
+											onChange={(e: any) => {
+												const input = e.target.value.replace(/[^A-Za-z]/ig, '');
+												const letter = input && input.charAt(input.length - 1).toUpperCase();
+												const letterNotInSlot = letter && !slot.some(l => l.value === letter);
+												if (letterNotInSlot) {
+													let updatedLetter = { value: letter };
+													let updatedSlot = [...slot.slice(0, j), updatedLetter, ...slot.slice(j + 1)];
+													setYellows([...yellows.slice(0, i), updatedSlot, ...yellows.slice(i + 1)]);
+													// focus next input in slot if possible (not possible for last slot in slot)
+													// auto focus attribute handles focus when the additional inputs mount
+													focusEl(document.getElementById(`yellow-${i}-${j + 1}`));
+													if (isLastLetterInSlot) {
+														focusEl(document.getElementById(`yellow-${i + 1}-0`));
+													}
+												}
+											}}
+										/>
+									)
+								})}
+							</div>
+						))}
+					</div>
+					<button
+						className='w-6 h-6 m-2 rounded-full border-2 border-blue-600 text-blue-600 flex justify-center items-center outline-offset-2'
+						onClick={() => {
+							setYellows(initArray(LETTERS_IN_WORD, [""]));
+						}}
+					>
+						-
+					</button>
+				</div>
+				<div>Greys</div>
+				<div className="flex">
+					<input
+						className={`w-[13.5rem] h-10 rounded text-center ${grey ? "bg-gray-200" : "bg-gray-100"}`}
+						value={grey}
+						onChange={(e) => setGreys(e.target.value.replace(/[^A-Za-z]/ig, '').toUpperCase())}
+					/>
+					<button
+						className='w-6 h-6 m-2 rounded-full border-2 border-blue-600 text-blue-600 flex justify-center items-center outline-offset-2'
+						onClick={() => {
+							setGreys("");
+						}}
+					>
+						-
+					</button>
+				</div>
+				<div>
+					<button
+						className="rounded-full bg-blue-600 text-white my-2 py-2 w-[13.5rem]"
+						onClick={async () => {
+							const knownData = {
+								greens: greens.map(g => g.value),
+								yellows: yellows.map(y => y.map(l => l.value)),
+								greys: grey.split("")
+							};
+							const words = wordle(knownData)
+							setResults(words);
+						}}
+					>
+						Find Matches
+					</button>
+				</div>
+				{results.length > 0 && `Matching words: ${results.length}`}
+				{results.map((result, i) => (
+					<div key={i}>
+						{result}
+					</div>
+				))}
+			</div>
 		</div>
 	)
 }
