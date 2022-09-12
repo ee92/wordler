@@ -51,7 +51,7 @@ const Home: NextPage = () => {
 						{greens.map((letter, i) => (
 							<input
 								key={i}
-								className={`w-10 h-10 rounded text-center ${letter ? "bg-green-300" : "bg-green-200"}`}
+								className={`w-10 h-10 rounded text-center ${letter.value ? "bg-green-300" : "bg-green-200"}`}
 								value={letter.value}
 								onKeyDown={(e: any) => {
 									if (e.key === "Backspace") {
@@ -100,7 +100,7 @@ const Home: NextPage = () => {
 											key={`yellow-${i}-${j}`}
 											id={`yellow-${i}-${j}`}
 											autoFocus={letter.autoFocus}
-											className={`w-10 h-10 rounded text-center ${letter ? "bg-yellow-300" : "bg-yellow-200"}`}
+											className={`w-10 h-10 rounded text-center ${letter.value ? "bg-yellow-300" : "bg-yellow-200"}`}
 											value={letter.value}
 											onKeyDown={(e: any) => {
 												if (e.key === "Backspace" && letter) {
