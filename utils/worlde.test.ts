@@ -1,6 +1,6 @@
 import wordle from "./wordle";
 
-test("wordle", () => {
+test("wordle greens", () => {
     const knownData = {
         greens: ["J", "", "Z", "", "Y"],
         yellows: [[""], [""], [""], [""], [""]],
@@ -9,7 +9,7 @@ test("wordle", () => {
     expect(wordle(knownData, ["happy", "jazzy"])).toStrictEqual(["jazzy"])
 })
 
-test("wordle 2", () => {
+test("wordle yellows", () => {
     const knownData = {
         greens: ["", "", "", "", "Y"],
         yellows: [["A", "F"], [""], [""], [""], [""]],
